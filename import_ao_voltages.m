@@ -5,7 +5,7 @@ filename = [patterns.ao_folder filesep sprintf(patterns.ao_data,seq)];
 csv = csvimport(filename);
 
 for h = 1:size(csv,2)
-    headers{h} = csv{1,h};
+    headers{h} = lower(csv{1,h});
     % replace bad characters with underscores
     headers{h} = regexprep(headers{h},'[() ,.%@#]','_');
     while headers{h}(1) == '_';
