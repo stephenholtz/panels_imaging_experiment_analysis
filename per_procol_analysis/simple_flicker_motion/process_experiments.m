@@ -143,17 +143,17 @@ else
         condition_data(i).rep(r(i)).ao.post_stim_inds  = sequence(seq_ind).post_stim_inds;
         
         condition_data(i).rep(r(i)).frames = sequence(seq_ind).frames;
-        condition_data(1).rep(r(i)).frame_time_ms = 1000*[condition_data(i).rep(r(i)).frames(:).time];
+        condition_data(i).rep(r(i)).frame_time_ms = 1000*[condition_data(i).rep(r(i)).frames(:).time];
 
         % Account for failed conditions
         if ~isempty(condition_data(i).rep(r(i)).ao.stim_inds)
-            condition_data(1).rep(r(i)).pre_stim_frame_inds = inds_in_range(condition_data(1).rep(r(i)).frame_time_ms,condition_data(i).rep(r(i)).ao.pre_stim_inds);
-            condition_data(1).rep(r(i)).stim_frame_inds = inds_in_range(condition_data(1).rep(r(i)).frame_time_ms,condition_data(i).rep(r(i)).ao.stim_inds);
-            condition_data(1).rep(r(i)).post_stim_frame_inds = inds_in_range(condition_data(1).rep(r(i)).frame_time_ms,condition_data(i).rep(r(i)).ao.post_stim_inds);
+            condition_data(i).rep(r(i)).pre_stim_frame_inds = inds_in_range(condition_data(i).rep(r(i)).frame_time_ms,condition_data(i).rep(r(i)).ao.pre_stim_inds);
+            condition_data(i).rep(r(i)).stim_frame_inds = inds_in_range(condition_data(i).rep(r(i)).frame_time_ms,condition_data(i).rep(r(i)).ao.stim_inds);
+            condition_data(i).rep(r(i)).post_stim_frame_inds = inds_in_range(condition_data(i).rep(r(i)).frame_time_ms,condition_data(i).rep(r(i)).ao.post_stim_inds);
         else
-            condition_data(1).rep(r(i)).pre_stim_frame_inds = [];
-            condition_data(1).rep(r(i)).stim_frame_inds = [];
-            condition_data(1).rep(r(i)).post_stim_frame_inds = [];
+            condition_data(i).rep(r(i)).pre_stim_frame_inds = [];
+            condition_data(i).rep(r(i)).stim_frame_inds = [];
+            condition_data(i).rep(r(i)).post_stim_frame_inds = [];
         end
         r(i) = r(i) + 1;
     end
