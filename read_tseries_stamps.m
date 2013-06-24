@@ -7,41 +7,41 @@ function stamps = read_tseries_stamps(fname)
     if ~isa(fname, 'char') || ~ismatrix(fname) || ~size(fname,1) == 1
         error 'Argument fname must be filename string'
     end
-    
-    % Read in the XML file
+
+    % Read in the XML file 
     try
-        root = xmlread(fname);
+        root = xmlread(fname); % (this does not work for large xml files)
     catch
         error 'Unable to parse XML file';
     end
-    
+
     % Search for the PVScan element
     root = scan_to(root, 'PVScan');
-    
+
     % Search for the Sequence element
     root = scan_to(root, 'Sequence');
-   
+
     % Get nodes of the sequence element
     if ~root.hasChildNodes
         error 'Invalid XML file format';
     end
-    
+
     children = root.getChildNodes;
-    
+
     % Preallocate time-stamps array (it is too large
     % but we will trim it at the end)
     stamps_data = zeros(1, children.getLength);
     stamps_num = 0;
-    
+
     % Traverse list of children
     for idx = 1:children.getLength
         if strcmp(children.item(idx-1).getNodeName, 'Frame')
             node = children.item(idx-1);
             attrib_list = node.getAttributes;
-            
+
             t_val = [];
             i_val = [];
-            
+
             for idx2 = 1:attrib_list.getLength
                 attrib = attrib_list.item(idx2-1);
                 if strcmp(attrib.getName, 'relativeTime')
@@ -50,7 +50,7 @@ function stamps = read_tseries_stamps(fname)
                     if isempty(t_val)
                         error 'Invalid XML file format';
                     end
-                    
+
                     clear t_str;
                 elseif strcmp(attrib.getName, 'index')
                     i_str = char(attrib.getValue);
@@ -58,24 +58,24 @@ function stamps = read_tseries_stamps(fname)
                     if isempty(i_val)
                         error 'Invalid XML file format';
                     end
-                    
+
                     clear i_str;
                 end
             end
-            
+
             if isempty(t_val) || isempty(i_val)
                 error 'Invalid XML file format';
             end
- 
+
             if stamps_num + 1 ~= i_val
                 error 'Invalid XML file format';
             end
-            
+
             stamps_num = stamps_num + 1;
             stamps_data(stamps_num) = t_val;
         end
     end
-    
+
     stamps = stamps_data(1:stamps_num);
 end
 
