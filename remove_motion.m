@@ -21,11 +21,15 @@ function frame_data = remove_motion(frame_data, ref)
         
     ref_disp = find_offset_seq(frame_data, ref, offset_opts); 
     movement = sqrt(ref_disp(1,:).^2 + ref_disp(2,:).^2);
-            
+    
     % Use boxcar filter to clean up displacement from first frame
-    filt_ref_disp(1,:) = filter_boxcar(ref_disp(1,:), disp_boxcar_order);
-    filt_ref_disp(2,:) = filter_boxcar(ref_disp(2,:), disp_boxcar_order);
-
+    try
+        filt_ref_disp(1,:) = filter_boxcar(ref_disp(1,:), disp_boxcar_order);
+        filt_ref_disp(2,:) = filter_boxcar(ref_disp(2,:), disp_boxcar_order);
+    catch ME
+        disp(error.ME);
+        rethrow(ME);
+    end
     % Retrieve each image
     for idx=1:length(frame_data)
         % Open the frame
@@ -37,5 +41,5 @@ function frame_data = remove_motion(frame_data, ref)
 
         frame_data(idx).image = im;
         frame_data(idx).movement = movement(:,idx);
-    end    
+    end
 end

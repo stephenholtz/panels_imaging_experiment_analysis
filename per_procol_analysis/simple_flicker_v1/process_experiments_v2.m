@@ -21,186 +21,192 @@ pmt_channel = 'Ch2';
 top_folder_loc = '/Users/stephenholtz/local_experiment_copies';
 experiment_name = 'simple_flicker_v1';
 
-genotype = 1;
-switch genotype
-    case 1
-        top_folder = 'c2_gcamp_6m_vk5/';
-    case 2
-        top_folder = 'c3_gcamp_6m_vk5/';
-    case 3
-        top_folder = 'lai_gcamp_6m_vk5/';
-end
+for genotype = 4
+    switch genotype
+        case 1
+            top_folder = 'c2_gcamp_6m_vk5/';
+        case 2
+            top_folder = 'c3_gcamp_6m_vk5/';
+        case 3
+            top_folder = 'lai_gcamp_6m_vk5/';
+        case 4
+            top_folder = 'c3_gcamp_6m_vk5_FAILED/';
+    end
 
-exp_folders = (dir([fullfile(top_folder_loc,experiment_name,top_folder) '*T*']));
-exp_folders = {exp_folders.name};
+    exp_folders = (dir([fullfile(top_folder_loc,experiment_name,top_folder) '*T*']));
+    exp_folders = {exp_folders.name};
 
-for exp_num = 1:numel(exp_folders)
+    for exp_num = numel(exp_folders):-1:1
 
-    save_folder_loc = fullfile(top_folder_loc,experiment_name,top_folder,exp_folders{exp_num});
+        save_folder_loc = fullfile(top_folder_loc,experiment_name,top_folder,exp_folders{exp_num});
 
-    %==Load in data============================================================
-
-    % All processed/organized data goes to 'condition_data' struct
-    if exist(fullfile(save_folder_loc,'condition_data.mat'),'file')
-        fprintf('Loading condition_data from %s',fullfile(save_folder_loc,'condition_data.mat\n'))
-        load(fullfile(save_folder_loc,'condition_data'));
-
-    else
-
+        %==Load in data============================================================
         fprintf('\nImporting experiment(%d/%d):\n\t%s\n',exp_num,numel(exp_folders),save_folder_loc)
 
-        %--Load metadata file--------------------------------------------------
-        load(fullfile([save_folder_loc filesep 'metadata.mat']));
+        % All processed/organized data goes to 'condition_data' struct
+        if exist(fullfile(save_folder_loc,'experiment.mat'),'file')
+            fprintf('\tExperiment already processed.\n')
+        else
+            %--Load metadata file--------------------------------------------------
+            load(fullfile([save_folder_loc filesep 'metadata.mat']));
 
-        %--Set up path sprintf names-------------------------------------------
-        % Set the folder that will have all of the images, voltages, xml files etc.
-        p.tseries_folder = save_folder_loc;
-        p.tseries_folder = [p.tseries_folder filesep dir_name(dir([p.tseries_folder filesep 'TSeries-*']))];
-        % get the base name from the folder: i.e. TSeries-05232013-1550-188, then
-        % add '_Cycle' and some digits to the end....
-        base_file_name = cell2mat(regexp(dir_name(dir([p.tseries_folder filesep '*.xml'])),'[^.xml]','match'));
-        p.tseries_fname_base = [base_file_name '_Cycle%0.5d_'];
+            %--Set up path sprintf names-------------------------------------------
+            % Set the folder that will have all of the images, voltages, xml files etc.
+            p.tseries_folder = save_folder_loc;
+            p.tseries_folder = [p.tseries_folder filesep dir_name(dir([p.tseries_folder filesep 'TSeries-*']))];
+            % get the base name from the folder: i.e. TSeries-05232013-1550-188, then
+            % add '_Cycle' and some digits to the end....
+            base_file_name = cell2mat(regexp(dir_name(dir([p.tseries_folder filesep '*.xml'])),'[^.xml]','match'));
+            p.tseries_fname_base = [base_file_name '_Cycle%0.5d_'];
 
-        % get the next portion of the file name: i.e. 'CurrentSettings_Ch2' and add
-        % some digits to the end and the file extension
-        p.tseries_fname_suffix = ['CurrentSettings_' pmt_channel '_%0.6d.tif'];
-        p.tseries_config = dir_name(dir([p.tseries_folder filesep '*.xml']));
+            % get the next portion of the file name: i.e. 'CurrentSettings_Ch2' and add
+            % some digits to the end and the file extension
+            p.tseries_fname_suffix = ['CurrentSettings_' pmt_channel '_%0.6d.tif'];
+            p.tseries_config = dir_name(dir([p.tseries_folder filesep '*.xml']));
 
-        % Currently only using ao, so ai is redundant
-        p.ai_folder = p.tseries_folder;
-        p.ai_data   = [base_file_name '_Cycle%0.5dTriggerSync_Data_Line000001.dat'];
-        p.ai_config = dir_name(dir([p.tseries_folder filesep '*TriggerSync_Data_Line000001.prm']));
+            % Currently only using ao, so ai is redundant
+            p.ai_folder = p.tseries_folder;
+            p.ai_data   = [base_file_name '_Cycle%0.5dTriggerSync_Data_Line000001.dat'];
+            p.ai_config = dir_name(dir([p.tseries_folder filesep '*TriggerSync_Data_Line000001.prm']));
 
-        p.ao_folder = p.tseries_folder;
-        p.ao_data   = [base_file_name '_Cycle%0.5dTriggerSync_Data_Line000001.dat'];
-        p.ao_config = dir_name(dir([p.tseries_folder filesep '*TriggerSync_Data_Line000001.prm']));
+            p.ao_folder = p.tseries_folder;
+            p.ao_data   = [base_file_name '_Cycle%0.5dTriggerSync_Data_Line000001.dat'];
+            p.ao_config = dir_name(dir([p.tseries_folder filesep '*TriggerSync_Data_Line000001.prm']));
 
-        all_files = dir(p.tseries_folder);
-        experiment_nums = nan(1,numel(all_files),1);
-        for i = 1:numel(all_files)
-            num = str2double(regexp(all_files(i).name,'(?<=Cycle)\d*','match'));
-            if ~isempty(num) && isnumeric(num)
-                experiment_nums(i) = num;
+            all_files = dir(p.tseries_folder);
+            experiment_nums = nan(1,numel(all_files),1);
+            for i = 1:numel(all_files)
+                num = str2double(regexp(all_files(i).name,'(?<=Cycle)\d*','match'));
+                if ~isempty(num) && isnumeric(num)
+                    experiment_nums(i) = num;
+                end
             end
-        end
-        experiment_nums = unique(experiment_nums);
-        experiment_nums = experiment_nums(~isnan(experiment_nums));
+            experiment_nums = unique(experiment_nums);
+            experiment_nums = experiment_nums(~isnan(experiment_nums));
 
-        %--Retrieve voltage values from----------------------------------------
-        fprintf('\tRetrieving voltages for experiment: \t%0.3d',experiment_nums(1))
-        clear experiment
-        for exp_ind = 1:numel(experiment_nums)
-            experiment(exp_ind).ao = import_ao_voltages(p,experiment_nums(exp_ind));
-            fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
-        end
-        fprintf('\tDone.\n')
-
-        %--Pull image data into a structure------------------------------------
-        fprintf('\tImporting experiment frames / XML data: %0.3d',experiment_nums(1))
-        for exp_ind = 1:numel(experiment_nums)
-            experiment(exp_ind).frames = retrieve_images(p,experiment_nums(exp_ind)); %#ok<*SAGROW>
-            fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
-        end
-        fprintf('\tDone.\n')
-
-        %--Register each set of frames------------------------------------------
-        fprintf('\tRegistering all frames: \t\t%0.3d',experiment_nums(1))
-        for exp_ind = 1:numel(experiment)
-            experiment(exp_ind).frames = remove_motion(experiment(exp_ind).frames,'first');
-            fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
-        end
-        fprintf('\tDone.\n')
-
-        %--Parse the voltage values for stimulus identification----------------
-        % Determine the pre-stimulus, stimulus, and post-stimulus time periods
-        % This should probably be its own function...
-        fprintf('\tParsing voltages for experiment: \t%0.3d',experiment_nums(1))
-        inc_thresh = .1; % at least a .1 volt increase for the start of stimulus
-        dur_thresh = 400;% pre-stimulus/stimulus/post-stimulus must be >= 1000 ms
-        for exp_ind = 1:numel(experiment_nums)
-
-            % Break experiment into stimulus segments
-
-            v_ts        = experiment(exp_ind).ao.nidaq_ao_1;
-            low_inds    = find(v_ts < .25);
-            high_inds   = find(v_ts > 4.75);
-            jump_inds   = find(abs(diff(v_ts))>inc_thresh);
-            stim_starts = intersect(jump_inds,low_inds);
-            stim_stops  = intersect(jump_inds,high_inds);
-
-            % Use x position to determine pre, during, and post stimulus
-            x_ts        = experiment(exp_ind).ao.panels_x_position;
-
-            % Determine which stimulus each one is (using metadata, also could
-            % use voltage values from panel controller as backup)
-            if numel(stim_stops) > numel(metadata.ordered_conditions)
-                disp('Too many stimulus conditions found in experiment, truncating')
-                stim_starts = stim_starts(1:numel(metadata.ordered_conditions));
-                stim_stops  = stim_stops(1:numel(metadata.ordered_conditions));
-            elseif numel(stim_stops) < numel(metadata.ordered_conditions)
-                disp('Missing some stimulus conditions in experiment')
-                stim_starts = stim_starts(1:numel(metadata.ordered_conditions));
-                stim_stops  = stim_stops(1:numel(metadata.ordered_conditions));
+            %--Retrieve voltage values from----------------------------------------
+            fprintf('\tRetrieving voltages for experiment: \t%0.3d',experiment_nums(1))
+            clear experiment
+            for exp_ind = 1:numel(experiment_nums)
+                experiment(exp_ind).ao = import_ao_voltages(p,experiment_nums(exp_ind));
+                fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
             end
+            fprintf('\tDone.\n')
 
-            if 0 % Double check that this is actually working
-                plot(v_ts,'Color',[0 .5 0]); hold all
-                plot(diff_inds,v_ts(diff_inds),'o')
-                plot(stim_starts,v_ts(stim_starts),'*','Color',[1 0 0])
-                plot(stim_stops,v_ts(stim_stops),'*','Color',[0 0 0])
-                pause(); 
-                clf
+            %--Pull image data into a structure------------------------------------
+            fprintf('\tImporting experiment frames / XML data: %0.3d',experiment_nums(1))
+            for exp_ind = 1:numel(experiment_nums)
+                experiment(exp_ind).frames = retrieve_images(p,experiment_nums(exp_ind),1); %#ok<*SAGROW>
+                fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
             end
+            fprintf('\tDone.\n')
 
-            r = ones(1,numel(unique(metadata.ordered_conditions)));
-            for i = 1:numel(stim_starts)
-                cond_num = metadata.ordered_conditions(i);
-                experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).start_stop_inds = [stim_starts(i) stim_stops(i)];
+            %--Register each set of frames------------------------------------------
+            fprintf('\tRegistering all frames: \t\t%0.3d',experiment_nums(1))
+            for exp_ind = 1:numel(experiment)
+                experiment(exp_ind).frames = remove_motion(experiment(exp_ind).frames,'first');
+                fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
+            end
+            fprintf('\tDone.\n')
 
-                % Determine pre and post stimulus inds for each segment
-                x_vals = x_ts(stim_starts(i):stim_stops(i));
-                volt_jump_inds = [1; find(abs(diff(x_vals))>inc_thresh); numel(x_vals)];
-                % find where the jumps take place before a long period
-                diff_inds = volt_jump_inds([find(diff(volt_jump_inds) > dur_thresh); find(diff(volt_jump_inds) > dur_thresh)+1]);
+            %--Parse the voltage values for stimulus identification----------------
+            % Determine the pre-stimulus, stimulus, and post-stimulus time periods
+            % This should probably be its own function...
+            fprintf('\tParsing voltages for experiment: \t%0.3d',experiment_nums(1))
+            inc_thresh = .1; % at least a .1 volt increase for the start of stimulus
+            dur_thresh = 400;% pre-stimulus/stimulus/post-stimulus must be >= 1000 ms
+            for exp_ind = 1:numel(experiment_nums)
+
+                % Break experiment into stimulus segments
+
+                v_ts        = experiment(exp_ind).ao.nidaq_ao_1;
+                low_inds    = find(v_ts < .1);
+                high_inds   = find(v_ts > 4.9);
+                jump_inds   = find(abs(diff(v_ts))>inc_thresh);
+                stim_starts = intersect(jump_inds,low_inds);
+                stim_stops  = intersect(jump_inds,high_inds);
+
+                % Use x position to determine pre, during, and post stimulus
+                x_ts        = experiment(exp_ind).ao.panels_x_position;
+
+                % Determine which stimulus each one is (using metadata, also could
+                % use voltage values from panel controller as backup)
+                if numel(stim_stops) > numel(metadata.ordered_conditions)
+                    disp('Too many stimulus conditions found in experiment, truncating')
+                    stim_starts = stim_starts(1:numel(metadata.ordered_conditions));
+                    stim_stops  = stim_stops(1:numel(metadata.ordered_conditions));
+                elseif numel(stim_stops) < numel(metadata.ordered_conditions)
+                    disp('Missing some stimulus conditions in experiment')
+                    stim_starts = stim_starts(1:numel(metadata.ordered_conditions));
+                    stim_stops  = stim_stops(1:numel(metadata.ordered_conditions));
+                end
 
                 if 0 % Double check that this is actually working
-                    plot(x_vals); hold all
-                    plot(volt_jump_inds,x_vals(volt_jump_inds),'o')
-                    plot(diff_inds,x_vals(diff_inds),'*')
+                    plot(v_ts,'Color',[0 .5 0]); hold all
+                    plot(diff_inds,v_ts(diff_inds),'o')
+                    plot(stim_starts,v_ts(stim_starts),'*','Color',[1 0 0])
+                    plot(stim_stops,v_ts(stim_stops),'*','Color',[0 0 0])
                     pause(); 
                     clf
                 end
 
-                try diff_inds = diff_inds([1 2 end-1 end]);
-                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).pre_stim_inds   = [diff_inds(1) diff_inds(2)];
-                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).post_stim_inds  = [diff_inds(3) diff_inds(4)];
-                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).stim_inds       = [diff_inds(2)+1 diff_inds(3)-1];
-                catch ME
-                    fprintf('Failed to find different stimulus segments in Cond %d  Rep %d.',cond_num,r(i));
-                    disp(ME.message)
-                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).pre_stim_inds   = [];
-                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).stim_inds       = [];
-                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).post_stim_inds  = [];
+                frame_times = 1000*[experiment(exp_ind).frames.time];
+
+                r = ones(1,numel(unique(metadata.ordered_conditions)));
+                for i = 1:numel(stim_starts)
+                    cond_num = metadata.ordered_conditions(i);
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).start_stop_inds = [stim_starts(i) stim_stops(i)];
+
+                    % Determine pre and post stimulus inds for each segment
+                    x_vals = x_ts(stim_starts(i):stim_stops(i));
+                    volt_jump_inds = [1; find(abs(diff(x_vals))>inc_thresh); numel(x_vals)];
+                    % find where the jumps take place before a long period
+                    diff_inds = sort(volt_jump_inds([find(diff(volt_jump_inds) > dur_thresh); find(diff(volt_jump_inds) > dur_thresh)+1]));
+
+                    if 0% Double check that this is actually working
+                        clf
+                        plot(x_vals); hold all
+                        plot(volt_jump_inds,x_vals(volt_jump_inds),'o')
+                        plot(diff_inds,x_vals(diff_inds),'*')
+                        plot(diff_inds([1 2 end-1 end]),x_vals(diff_inds([1 2 end-1 end])),'o','linewidth',3)
+                        pause();
+                    end
+
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).daq.pre_stim_inds   = stim_starts(i)+[diff_inds(1) diff_inds(2)];
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).daq.stim_inds       = stim_starts(i)+[diff_inds(2)+1 diff_inds(end-1)-1];
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).daq.post_stim_inds  = stim_starts(i)+[diff_inds(end-1) diff_inds(end)];
+
+                    daq_pre_inds  = experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).daq.pre_stim_inds;
+                    daq_stim_inds = experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).daq.stim_inds;
+                    daq_post_inds = experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).daq.post_stim_inds;
+
+                    frame_pre_inds  = ((frame_times >= daq_pre_inds(1))  & (frame_times <= daq_pre_inds(2)));
+                    frame_stim_inds = ((frame_times >= daq_stim_inds(1)) & (frame_times <= daq_stim_inds(2)));
+                    frame_post_inds = ((frame_times >= daq_post_inds(1)) & (frame_times <= daq_post_inds(2)));
+
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).frames.pre_stim_inds  = find(frame_pre_inds);
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).frames.stim_inds      = find(frame_stim_inds);
+                    experiment(exp_ind).condition_data(cond_num).rep(r(cond_num)).frames.post_stim_inds = find(frame_post_inds);
+
+                    r(cond_num) = r(cond_num) + 1;
                 end
 
-                r(cond_num) = r(cond_num) + 1;
+                fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
             end
+            fprintf('\tDone.\n')
 
-            fprintf('\b\b\b%0.3d',experiment_nums(exp_ind))
+            %==Save Imported Data==================================================
+
+            save_destination = fullfile(save_folder_loc,'experiment.mat');
+            fprintf('\tSaving imported data to: \n\t%s',save_destination)
+            save(save_destination,'experiment');
+
+            % Make the memory leak crash happen later
+            clear p force
+            clear experiment force
+            close all force
+
+            fprintf('\tDone.\n')
         end
-        fprintf('\tDone.\n')
-
-        %==Save Imported Data==================================================
-
-        save_destination = fullfile(save_folder_loc,'experiment.mat');
-        fprintf('\tSaving imported data to: \n\t%s',save_destination)
-        save(save_destination,'experiment');
-        
-        % Make the memory leak crash happen later
-        clear p force
-        clear experiment force
-        close all force
-        
-        fprintf('\tDone.\n')
     end
 end

@@ -1,4 +1,4 @@
-function frame_data = retrieve_images(patterns, seq)
+function frame_data = retrieve_images(patterns, seq, max_speed_flag)
 %RETRIEVE_IMAGES Gather images into a structure.
 %
 %  patterns - A structure containing the fields:
@@ -33,10 +33,18 @@ function frame_data = retrieve_images(patterns, seq)
 %     filesep,  ...
 %     sprintf(ai_config, seq)]
 %
+%  Added:
+%  If the max_speed_flag is true, the xml parsing function will check if
+%  the "Max Speed" option was checked, and only look for the first 10
+%  frames' timestamps, and apply the same difference between them to the
+%  rest of the frames.
     
     % Check arguments
     if ~isa(seq, 'double') || ~isscalar(seq)
         error 'Argument seq has invalid type';
+    end
+    if ~exist('max_speed_flag','var')
+        max_speed_flag = 0;
     end
     
     % Assemble the t-series frame pattern
@@ -58,9 +66,11 @@ function frame_data = retrieve_images(patterns, seq)
     frames = frames(1:end-1);
     
     % Get timestamps for each frame
-    frames_time = read_tseries_stamps(tseries_config);
-    frames_time = frames_time(frames);
-
+    if ~max_speed_flag
+        frames_time = read_tseries_stamps(tseries_config);
+        frames_time = frames_time(frames);
+    end
+    
     % Create data structure
     frame_data = [];
     frame_data.time = [];
@@ -73,7 +83,11 @@ function frame_data = retrieve_images(patterns, seq)
         fname = sprintf(tseries_pattern, frames(idx));
         im = double(imread(fname));
         
-        frame_data(idx).time = frames_time(idx);
+        if max_speed_flag
+            'apple'
+        else
+            frame_data(idx).time = frames_time(idx);
+        end
         frame_data(idx).image = im;
     end
 end
